@@ -1,4 +1,6 @@
-// src/components/itinerary/ExpenseBreakdown.tsx
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Home, Utensils, Car, Ticket, MoreHorizontal } from 'lucide-react'
+import type { ExpenseBreakdown as ExpenseBreakdownType } from '@/lib/types'
 import { formatINR } from '@/lib/utils'
 
 type Expense = {
@@ -9,58 +11,105 @@ type Expense = {
     negotiation_tip?: string
 }
 
-export default function ExpenseBreakdown({ expenses, total }: { expenses: Expense[], total: number }) {
-    if (!expenses?.length) return (
-        <section className="mt-8">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">Expense Breakdown</h2>
-            <div className="bg-white border border-gray-100 rounded-3xl p-8 text-center">
-                <p className="text-gray-400">No expense breakdown provided for this trip.</p>
-                <div className="mt-4 text-2xl font-black text-[#E07A3F]">{formatINR(total)}</div>
-                <div className="text-xs text-gray-400 uppercase tracking-widest mt-1 font-semibold">Total Expense</div>
-            </div>
-        </section>
-    )
+interface ExpenseBreakdownProps {
+  expenses?: Expense[]
+  breakdown?: ExpenseBreakdownType
+  totalExpense?: number
+  total?: number
+}
 
-    return (
-        <section className="mt-8">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">Expense Breakdown</h2>
+const expenseCategories = [
+  { key: 'stay', label: 'Stay', icon: Home },
+  { key: 'food', label: 'Food', icon: Utensils },
+  { key: 'travel', label: 'Travel', icon: Car },
+  { key: 'activities', label: 'Activities', icon: Ticket },
+  { key: 'other', label: 'Other', icon: MoreHorizontal },
+] as const
 
-            <div className="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm">
-                <div className="p-6 bg-gray-50/50 border-b border-gray-100">
-                    <div className="flex items-baseline justify-between">
-                        <span className="text-sm font-medium text-gray-500 uppercase tracking-widest">Total Trip</span>
-                        <span className="text-3xl font-black text-[#E07A3F]">{formatINR(total)}</span>
-                    </div>
+export default function ExpenseBreakdown({ expenses, breakdown: propBreakdown, totalExpense, total }: ExpenseBreakdownProps) {
+  
+  // Calculate total expense from either prop
+  const finalTotal = total || totalExpense || 0
+  
+  // Map expenses array into ExpenseBreakdownType shape if breakdown is not provided
+  let breakdown: ExpenseBreakdownType = propBreakdown || {
+      stay: 0, food: 0, travel: 0, activities: 0, other: 0
+  }
+
+  if (expenses && expenses.length > 0 && !propBreakdown) {
+      breakdown = expenses.reduce((acc, exp) => {
+          const key = exp.category as keyof ExpenseBreakdownType
+          if (acc[key] !== undefined) {
+             acc[key] = (acc[key] || 0) + exp.amount
+          } else {
+             acc['other'] = (acc['other'] || 0) + exp.amount
+          }
+          return acc
+      }, { stay: 0, food: 0, travel: 0, activities: 0, other: 0 } as ExpenseBreakdownType)
+  }
+
+  const valuesArr = Object.values(breakdown).filter(v => typeof v === 'number' && v > 0) as number[]
+  const maxAmount = valuesArr.length > 0 ? Math.max(...valuesArr) : 1 // Avoid divide by zero
+
+  if ((!expenses?.length && !propBreakdown) || finalTotal === 0) {
+      return (
+        <Card className="mt-8 rounded-[32px] border-gray-100 shadow-xl shadow-orange-900/5 bg-white">
+          <CardHeader className="pb-3 text-center pt-8">
+            <CardTitle className="text-xl font-bold text-gray-900 mb-2">Expense Breakdown</CardTitle>
+            <p className="text-gray-400 font-normal">No expense breakdown provided for this trip.</p>
+            <div className="mt-4 text-2xl font-black text-[#E07A3F]">{formatINR(finalTotal)}</div>
+            <div className="text-xs text-gray-400 uppercase tracking-widest mt-1 font-semibold">Total Expense</div>
+          </CardHeader>
+        </Card>
+      )
+  }
+
+  return (
+    <Card className="mt-8 rounded-[32px] border-gray-100 shadow-xl shadow-orange-900/5 bg-white">
+      <CardHeader className="pb-3 border-b-0 space-y-0 p-6 mb-2">
+        <CardTitle className="text-lg font-black text-gray-900 leading-tight flex items-center justify-between">
+          <span>Expense Breakdown</span>
+          <span className="text-xl font-bold text-[#E07A3F]">
+            {formatINR(finalTotal)}
+          </span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="px-6 pb-6 pt-2">
+        <div className="space-y-5">
+          {expenseCategories.map(({ key, label, icon: Icon }) => {
+            const amount = breakdown[key as keyof ExpenseBreakdownType]
+            if (!amount) return null
+            
+            const percentage = finalTotal > 0 ? (amount / finalTotal) * 100 : 0
+            const barWidth = (amount / maxAmount) * 100
+
+            return (
+              <div key={key} className="space-y-2 group">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Icon className="h-4 w-4 text-gray-400 group-hover:text-gray-600 transition-colors" />
+                    <span className="text-sm font-bold text-gray-800">{label}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-black text-gray-900 tabular-nums">
+                      {formatINR(amount)}
+                    </span>
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest w-8 text-right">
+                      {percentage.toFixed(0)}%
+                    </span>
+                  </div>
                 </div>
-
-                <div className="divide-y divide-gray-50">
-                    {expenses.map((exp) => (
-                        <div key={exp.id} className="p-5 hover:bg-gray-50/30 transition-colors">
-                            <div className="flex items-start justify-between mb-2">
-                                <div>
-                                    <h3 className="font-bold text-gray-800 capitalize">{exp.category}</h3>
-                                    <span className={`text-[10px] uppercase tracking-tighter px-1.5 py-0.5 rounded font-bold
-                                        ${exp.price_type === 'negotiated' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-500'}
-                                    `}>
-                                        {exp.price_type}
-                                    </span>
-                                </div>
-                                <span className="font-bold text-gray-900">{formatINR(exp.amount)}</span>
-                            </div>
-
-                            {exp.negotiation_tip && (
-                                <div className="mt-2 bg-amber-50/50 border border-amber-100 rounded-xl p-3 flex items-start gap-3">
-                                    <span className="text-lg">🧠</span>
-                                    <div className="text-sm text-amber-900 italic leading-snug">
-                                        <span className="font-bold block not-italic text-[10px] uppercase tracking-widest mb-1 text-amber-600">How they got it:</span>
-                                        "{exp.negotiation_tip}"
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    ))}
+                <div className="h-2 bg-gray-50 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-[#E07A3F] rounded-full transition-all duration-1000 group-hover:opacity-80"
+                    style={{ width: `${barWidth}%` }}
+                  />
                 </div>
-            </div>
-        </section>
-    )
+              </div>
+            )
+          })}
+        </div>
+      </CardContent>
+    </Card>
+  )
 }

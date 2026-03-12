@@ -49,19 +49,20 @@ export default function Step2Basics() {
                     <div>
                         <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">Duration (Days)</label>
                         <input
-                            type="number"
-                            min="1"
-                            value={days}
-                            onChange={(e) => setDays(Number(e.target.value))}
+                            type="text"
+                            inputMode="numeric"
+                            value={days || ''}
+                            onChange={(e) => setDays(Number(e.target.value.replace(/\D/g, '')))}
                             className="w-full bg-gray-50 border-2 border-gray-100 rounded-2xl px-5 py-3 font-bold focus:border-[#E07A3F] outline-none"
                         />
                     </div>
                     <div>
                         <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">Total Budget (₹)</label>
                         <input
-                            type="number"
+                            type="text"
+                            inputMode="numeric"
                             value={expense}
-                            onChange={(e) => setExpense(e.target.value)}
+                            onChange={(e) => setExpense(e.target.value.replace(/\D/g, ''))}
                             placeholder="7200"
                             className="w-full bg-gray-50 border-2 border-gray-100 rounded-2xl px-5 py-3 font-bold focus:border-[#E07A3F] outline-none"
                         />

@@ -21,10 +21,15 @@ export type ItineraryCardData = {
     save_count: number
     created_at: string
     tips: Tip[]
+    destinations?: {
+        name: string
+        slug: string
+    }
 }
 
 type Props = {
     itinerary: ItineraryCardData
+    showDestination?: boolean
 }
 
 // ── Formatters ────────────────────────────────────────────────────────────────
@@ -86,10 +91,11 @@ const TIP_TYPE_ICON: Record<Tip['tip_type'], string> = {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export default function ItineraryCard({ itinerary }: Props) {
+export default function ItineraryCard({ itinerary, showDestination = false }: Props) {
     const {
         id, duration_days, total_expense, persona, comfort_level,
         travel_month, travel_year, quality_tier, view_count, save_count, tips,
+        destinations
     } = itinerary
 
     const comfort = COMFORT_CONFIG[comfort_level]
@@ -121,6 +127,11 @@ export default function ItineraryCard({ itinerary }: Props) {
                                 / {duration_days} Days
                             </span>
                         </div>
+                        {showDestination && destinations && (
+                            <div className="text-[10px] font-black text-[#E07A3F] uppercase tracking-[0.2em] mb-1">
+                                {destinations.name}
+                            </div>
+                        )}
                         <div className="flex items-center gap-2">
                             <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
                                 {PERSONA_LABEL[persona]} Trip

@@ -1,234 +1,172 @@
-// src/app/page.tsx
-'use client'
+import { Header } from '@/components/layout/Header'
+import { SearchBar } from '@/components/search/SearchBar'
+import { DestinationCard } from '@/components/search/DestinationCard'
+import ItineraryCard from '@/components/destination/ItineraryCard'
+import { createClient } from '@/lib/supabase/server'
+import { MapPin, TrendingUp, Wallet, Lightbulb } from 'lucide-react'
 
-import { useState, useRef, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+export default async function HomePage() {
+  const supabase = createClient()
 
-// Popular seed destinations shown as quick-tap chips
-const FEATURED_DESTINATIONS = [
-  { name: 'Goa', slug: 'goa', meta: '3–5 days' },
-  { name: 'Manali', slug: 'manali', meta: '5–7 days' },
-  { name: 'Ladakh', slug: 'ladakh', meta: '7–10 days' },
-  { name: 'Kerala', slug: 'kerala', meta: '5–7 days' },
-  { name: 'Coorg', slug: 'coorg', meta: '2–3 days' },
-  { name: 'Dapoli', slug: 'dapoli', meta: '2 days' },
-]
+  // Fetch Featured Destinations
+  const { data: featuredDestinations } = await supabase
+    .from('destinations')
+    .select('*')
+    .limit(6)
 
-const TRUST_PILLS = [
-  'Real trip costs',
-  'Negotiated prices',
-  'Ground-level tips',
-  'No sponsored content',
-]
-
-export default function Home() {
-  const [query, setQuery] = useState('')
-  const [focused, setFocused] = useState(false)
-  const inputRef = useRef<HTMLInputElement>(null)
-  const router = useRouter()
-
-  // Auto-focus search on mount
-  useEffect(() => { inputRef.current?.focus() }, [])
-
-  const handleSearch = (slug?: string) => {
-    const target = slug ?? query.trim().toLowerCase().replace(/\s+/g, '-')
-    if (!target) return
-    router.push(`/destination/${target}`)
-  }
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') handleSearch()
-  }
+  // Fetch Trending Itineraries
+  const { data: trendingItineraries } = await supabase
+    .from('itineraries')
+    .select(`
+      id, duration_days, total_expense, persona, comfort_level,
+      travel_month, travel_year, quality_tier, view_count, save_count,
+      created_at,
+      tips (content, tip_type),
+      destinations (name, slug)
+    `)
+    .eq('published', true)
+    .order('view_count', { ascending: false })
+    .limit(4)
 
   return (
-    <div className="min-h-screen bg-[#FAF8F5]">
-
-      {/* ── Nav ─────────────────────────────────────────────────── */}
-      <nav className="flex items-center justify-between px-6 py-4 max-w-5xl mx-auto">
-        <span className="text-lg font-bold tracking-tight text-gray-900"
-          style={{ fontFamily: "'Georgia', serif" }}>
-          my<span className="text-[#E07A3F]">tours</span>
-        </span>
-        <a
-          href="/upload"
-          className="text-sm font-medium text-gray-600 hover:text-gray-900
-                     border border-gray-300 hover:border-gray-500
-                     px-4 py-1.5 rounded-full transition-colors duration-150"
-        >
-          + Share a trip
-        </a>
-      </nav>
-
-      {/* ── Hero ────────────────────────────────────────────────── */}
-      <main className="flex flex-col items-center px-6 pt-16 pb-24">
-
-        {/* Headline */}
-        <div className="text-center mb-10 max-w-xl">
-          <h1
-            className="text-4xl sm:text-5xl font-bold text-gray-900 leading-tight mb-4"
-            style={{ fontFamily: "'Georgia', serif" }}
-          >
-            What does this trip
-            <br />
-            <span className="text-[#E07A3F]">actually</span> cost?
-          </h1>
-          <p className="text-gray-500 text-base sm:text-lg leading-relaxed">
-            Real itineraries. Real expenses. Real tips — from travelers
-            who have already been there.
-          </p>
-        </div>
-
-        {/* Trust pills */}
-        <div className="flex flex-wrap justify-center gap-2 mb-10">
-          {TRUST_PILLS.map(pill => (
-            <span
-              key={pill}
-              className="text-xs text-gray-500 bg-white border border-gray-200
-                         px-3 py-1 rounded-full"
-            >
-              {pill}
-            </span>
-          ))}
-        </div>
-
-        {/* Search box */}
-        <div className="w-full max-w-lg">
-          <div
-            className={`flex items-center gap-3 bg-white rounded-2xl px-5 py-4
-                        border-2 transition-colors duration-150 shadow-sm
-                        ${focused
-                ? 'border-[#E07A3F] shadow-[0_0_0_4px_rgba(224,122,63,0.08)]'
-                : 'border-gray-200'
-              }`}
-          >
-            {/* Search icon */}
-            <svg
-              className={`w-5 h-5 flex-shrink-0 transition-colors duration-150
-                          ${focused ? 'text-[#E07A3F]' : 'text-gray-400'}`}
-              fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-            >
-              <path strokeLinecap="round" strokeLinejoin="round"
-                d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
-            </svg>
-
-            <input
-              ref={inputRef}
-              type="text"
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-              onKeyDown={handleKeyDown}
-              onFocus={() => setFocused(true)}
-              onBlur={() => setFocused(false)}
-              placeholder="Search a destination..."
-              className="flex-1 bg-transparent text-gray-900 placeholder-gray-400
-                         text-base outline-none"
-              autoComplete="off"
-              autoCorrect="off"
-              spellCheck={false}
-            />
-
-            {/* Clear button */}
-            {query && (
-              <button
-                onClick={() => { setQuery(''); inputRef.current?.focus() }}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-                aria-label="Clear search"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24"
-                  stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round"
-                    d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            )}
-
-            <button
-              onClick={() => handleSearch()}
-              disabled={!query.trim()}
-              className="bg-[#E07A3F] hover:bg-[#C96A32] disabled:bg-gray-200
-                         text-white disabled:text-gray-400
-                         text-sm font-semibold px-4 py-2 rounded-xl
-                         transition-colors duration-150 flex-shrink-0"
-            >
-              Search
-            </button>
-          </div>
-        </div>
-
-        {/* ── Featured destinations ──────────────────────────────── */}
-        <div className="w-full max-w-lg mt-12 animate-in fade-in slide-in-from-bottom-8 duration-1000">
-          <div className="flex items-center gap-3 mb-6">
-            <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Hot right now</h2>
-            <div className="h-px flex-1 bg-gray-100" />
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {FEATURED_DESTINATIONS.map(dest => (
-              <button
-                key={dest.slug}
-                onClick={() => handleSearch(dest.slug)}
-                className="group relative overflow-hidden bg-white border border-gray-100 hover:border-[#E07A3F] rounded-[24px] px-5 py-4 text-left transition-all duration-300 hover:shadow-xl hover:shadow-orange-900/5 hover:-translate-y-1"
-              >
-                <div className="flex flex-col relative z-10">
-                  <span className="text-sm font-black text-gray-900 group-hover:text-[#E07A3F] transition-colors">
-                    {dest.name}
-                  </span>
-                  <span className="text-[10px] font-bold text-gray-400 mt-1 uppercase tracking-tighter">
-                    {dest.meta}
-                  </span>
-                </div>
-                {/* Decorative background element */}
-                <div className="absolute top-0 right-0 w-12 h-12 bg-orange-50 rounded-full blur-2xl -mr-6 -mt-6 group-hover:bg-orange-100 transition-colors" />
-              </button>
-            ))}
-          </div>
-
-          <div className="mt-12 p-6 bg-slate-900 rounded-[32px] text-white relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl -mr-16 -mt-16" />
-            <div className="relative z-10">
-              <div className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 mb-2">Editor's Pick</div>
-              <h3 className="text-xl font-black mb-2">Spiti Valley — The Hidden Trail</h3>
-              <p className="text-sm text-slate-400 leading-relaxed mb-4">"Carry cash, there are exactly two ATMs between Kaza and Manali."</p>
-              <button
-                onClick={() => handleSearch('spiti')}
-                className="text-xs font-bold underline decoration-[#E07A3F] decoration-2 underline-offset-4 hover:text-[#E07A3F] transition-colors"
-              >
-                View full reality report →
-              </button>
+    <div className="min-h-screen bg-background">
+      <Header />
+      
+      {/* Hero Section */}
+      <section className="relative overflow-hidden bg-secondary py-16 md:py-24">
+        <div className="container mx-auto px-4">
+          <div className="max-w-3xl mx-auto text-center font-serif">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-4 text-balance">
+              Plan trips with <span className="text-primary">real expenses</span> from real travelers
+            </h1>
+            <p className="text-lg md:text-xl text-muted-foreground mb-8 text-pretty font-sans">
+              No more guessing. See actual costs, practical tips, and street-smart advice from people who have already been there.
+            </p>
+            <SearchBar size="lg" className="max-w-xl mx-auto font-sans" />
+            
+            <div className="flex flex-wrap items-center justify-center gap-6 mt-8 text-sm text-muted-foreground font-sans">
+              <span className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-primary" />
+                {featuredDestinations?.length || 0} destinations
+              </span>
+              <span className="flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-primary" />
+                280+ real itineraries
+              </span>
+              <span className="flex items-center gap-2">
+                <Lightbulb className="h-4 w-4 text-primary" />
+                1,200+ tips shared
+              </span>
             </div>
           </div>
         </div>
+      </section>
 
-
-        {/* ── Bottom CTA ─────────────────────────────────────────── */}
-        <div className="mt-20 text-center">
-          <p className="text-sm text-gray-400 mb-3">
-            Just got back from a trip?
-          </p>
-          <a
-            href="/upload"
-            className="inline-flex items-center gap-2 text-sm font-semibold
-                       text-[#E07A3F] hover:text-[#C96A32] transition-colors"
-          >
-            Share your itinerary
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24"
-              stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round"
-                d="M17 8l4 4m0 0l-4 4m4-4H3" />
-            </svg>
-          </a>
+      {/* Value Props */}
+      <section className="py-12 border-b border-border">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="flex flex-col items-center text-center p-6">
+              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                <Wallet className="h-6 w-6 text-primary" />
+              </div>
+              <h3 className="text-lg font-semibold text-foreground mb-2">Real Trip Expenses</h3>
+              <p className="text-muted-foreground text-sm">
+                See actual cost breakdowns from travelers - stay, food, travel, and activities.
+              </p>
+            </div>
+            <div className="flex flex-col items-center text-center p-6">
+              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                <Lightbulb className="h-6 w-6 text-primary" />
+              </div>
+              <h3 className="text-lg font-semibold text-foreground mb-2">Ground-Level Tips</h3>
+              <p className="text-muted-foreground text-sm">
+                Practical insights you will not find elsewhere - from network coverage to negotiation hacks.
+              </p>
+            </div>
+            <div className="flex flex-col items-center text-center p-6">
+              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                <TrendingUp className="h-6 w-6 text-primary" />
+              </div>
+              <h3 className="text-lg font-semibold text-foreground mb-2">Street-Smart Pricing</h3>
+              <p className="text-muted-foreground text-sm">
+                Learn how travelers got their prices - direct bookings, negotiation, and local rates.
+              </p>
+            </div>
+          </div>
         </div>
+      </section>
 
-      </main>
+      {/* Featured Destinations */}
+      <section className="py-12 md:py-16">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground">Popular Destinations</h2>
+              <p className="text-muted-foreground mt-1">Explore itineraries from top Indian destinations</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {featuredDestinations?.map((destination: any) => (
+              <DestinationCard key={destination.id} destination={destination} />
+            ))}
+          </div>
+        </div>
+      </section>
 
-      {/* ── Footer ──────────────────────────────────────────────── */}
-      <footer className="border-t border-gray-200 py-6 px-6">
-        <div className="max-w-5xl mx-auto flex items-center justify-between
-                        text-xs text-gray-400">
-          <span>© {new Date().getFullYear()} My Tours</span>
-          <span>Real trips. Real costs.</span>
+      {/* Trending Itineraries */}
+      <section className="py-12 md:py-16 bg-secondary/50">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground">Trending Itineraries</h2>
+              <p className="text-muted-foreground mt-1">Most viewed trips this month</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {trendingItineraries?.map((itinerary: any) => (
+              <ItineraryCard key={itinerary.id} itinerary={itinerary} showDestination />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-16 md:py-20">
+        <div className="container mx-auto px-4">
+          <div className="max-w-2xl mx-auto text-center">
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
+              Been somewhere recently?
+            </h2>
+            <p className="text-muted-foreground mb-8">
+              Share your trip in under 60 seconds. Help other travelers plan better and see your real-world impact.
+            </p>
+            <a 
+              href="/upload" 
+              className="inline-flex items-center justify-center rounded-full bg-primary px-8 py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+            >
+              Share Your Trip
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t border-border py-8">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
+                <MapPin className="h-4 w-4 text-primary-foreground" />
+              </div>
+              <span className="font-semibold text-foreground">My Tours</span>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              The most practical, street-smart travel planning platform
+            </p>
+          </div>
         </div>
       </footer>
-
     </div>
   )
 }

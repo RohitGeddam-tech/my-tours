@@ -57,7 +57,7 @@ export interface UploadState {
 const initialState = {
     step: 1,
     destination: '', destination_slug: '', cover_image: '',
-    duration_days: 2, total_expense: 0,
+    duration_days: 0, total_expense: 0,
     persona: 'solo', comfort_level: 'budget',
     travel_month: new Date().getMonth() + 1,
     travel_year: new Date().getFullYear(),

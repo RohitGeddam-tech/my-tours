@@ -33,9 +33,9 @@ export default function Step3Expenses() {
         <div className="animate-in fade-in slide-in-from-right-4 duration-500">
             <h2 className="text-3xl font-black text-gray-900 mb-2">Expense Breakdown</h2>
             <div className="flex items-center justify-between mb-8">
-                <p className="text-gray-500">Total Budget: <span className="font-bold text-gray-900">{formatINR(total_expense * 100)}</span></p>
+                <p className="text-gray-500">Total Budget: <span className="font-bold text-gray-900">{formatINR(total_expense)}</span></p>
                 <div className={`text-xs font-bold px-3 py-1 rounded-full ${remaining < 0 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
-                    {remaining >= 0 ? `${formatINR(remaining * 100)} remaining` : `Exceeded by ${formatINR(Math.abs(remaining) * 100)}`}
+                    {remaining >= 0 ? `${formatINR(remaining)} remaining` : `Exceeded by ${formatINR(Math.abs(remaining))}`}
                 </div>
             </div>
 
@@ -49,7 +49,7 @@ export default function Step3Expenses() {
                                 <div className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{exp.price_type}</div>
                             </div>
                             <div className="flex items-center gap-4">
-                                <span className="font-bold text-gray-900">{formatINR(exp.amount * 100)}</span>
+                                <span className="font-bold text-gray-900">{formatINR(exp.amount)}</span>
                                 <button onClick={() => removeExpense(i)} className="text-red-400 hover:text-red-600">✕</button>
                             </div>
                         </div>
@@ -67,10 +67,11 @@ export default function Step3Expenses() {
                             {CATEGORIES.map(c => <option key={c} value={c} className="capitalize">{c}</option>)}
                         </select>
                         <input
-                            type="number"
+                            type="text"
+                            inputMode="numeric"
                             placeholder="Amount (₹)"
-                            value={amount}
-                            onChange={(e) => setAmount(e.target.value)}
+                            value={amount || ''}
+                            onChange={(e) => setAmount(e.target.value.replace(/\D/g, ''))}
                             className="bg-white border-2 border-gray-100 rounded-xl px-4 py-2 text-sm font-bold outline-none focus:border-[#E07A3F]"
                         />
                     </div>
